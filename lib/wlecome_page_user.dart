@@ -5,6 +5,9 @@ import 'package:demoproject_moneylans/models/user_detail_model.dart';
 import 'package:demoproject_moneylans/user_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'boxes.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({Key? key}) : super(key: key);
@@ -14,15 +17,26 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    loadData();
+  }
+
+  @override
+  void dispose() {
+    Hive.close();
+    // TODO: implement dispose
+
+    super.dispose();
+  }
+
   TextEditingController ageTextController = TextEditingController();
   TextEditingController genderTextController = TextEditingController();
 
   List<UserDetail> userList = [];
   List<String> gender = [];
-  void initState() {
-    super.initState;
-    loadData();
-  }
 
   loadData() async {
     final personjson = await rootBundle.loadString("jsonfile/user_mock.json");
@@ -33,7 +47,9 @@ class _WelcomePageState extends State<WelcomePage> {
     userData.forEach((element) {
       UserDetail user = UserDetail(
           id: element["id"], name: element["name"], atype: element["atype"]);
-      userList.add(user);
+      // userList.add(user);
+      final box = Boxes.getUserDetails();
+      box.add(user);
     });
     // List.from(userData).map<Users>((item) => User.formMap(item)).toList();
     setState(() {});
@@ -42,54 +58,60 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Demo Project '),
-      ),
-      body: Container(
-        child: userList.isEmpty
-            ? Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: userList.length,
-                itemBuilder: ((context, index) {
-                  gender.add("");
+        appBar: AppBar(
+          title: Text('Demo Project '),
+        ),
+        body: ValueListenableBuilder<Box<UserDetail>>(
+            valueListenable: Boxes.getUserDetails().listenable(),
+            builder: (context, box, _) {
+              userList = box.values.toList().cast<UserDetail>();
+              return Container(
+                child: userList.isEmpty
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        itemCount: userList.length,
+                        itemBuilder: ((context, index) {
+                          gender.add("");
 
-                  return Container(
-                    width: 100,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) =>
-                                UserDetailScreen(userDetail: userList[index])));
-                      },
-                      child: Card(
-                        color: Colors.amberAccent,
-                        child: ListTile(
-                          title: Text(
-                            userList[index].name!,
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          trailing: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                primary: Colors.purple,
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 50, vertical: 20),
-                                textStyle: TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.bold)),
-                            child: userList[index].isLoggedIn
-                                ? Text("Sign Out")
-                                : Text("Sign in"),
-                            onPressed: () {
-                              openDialog(index);
-                              print(index);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                })),
-      ),
-    );
+                          return Container(
+                            width: 100,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => UserDetailScreen(
+                                        userDetail: userList[index])));
+                              },
+                              child: Card(
+                                color: Colors.amberAccent,
+                                child: ListTile(
+                                  title: Text(
+                                    userList[index].name!,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  trailing: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                        primary: Colors.purple,
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 50, vertical: 20),
+                                        textStyle: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold)),
+                                    child: userList[index].isLoggedIn
+                                        ? Text("Sign Out")
+                                        : Text("Sign in"),
+                                    onPressed: () {
+                                      openDialog(index);
+                                      print(index);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        })),
+              );
+            }));
   }
 
   Future openDialog(int index) => showDialog(

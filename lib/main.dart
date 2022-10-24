@@ -1,7 +1,14 @@
+import 'package:demoproject_moneylans/models/user_detail_model.dart';
 import 'package:demoproject_moneylans/wlecome_page_user.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  Hive.registerAdapter(UserDetailAdapter());
+  await Hive.openBox<UserDetail>('userDetails');
   runApp(const MyApp());
 }
 
